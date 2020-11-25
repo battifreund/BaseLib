@@ -6,11 +6,13 @@
 #include <BLLogger.h>
 #include <BLwifi.h>
 #include <BLOTA.h>
+#include <BLMQTT.h>
 
 BL::Logger *logger;
 BL::Config *config;
 BL::Wifi *wifi;
 BL::OTA *ota;
+BL::MQTT *mqtt;
 
 BL::ConfigTemplate_t configTemplates[] PROGMEM = {
     {"mqtt_hostname", "mqtt.diefreunds.de", 1, "MQTT Host", 40},
@@ -44,10 +46,20 @@ void setup()
 
   ota = new BL::OTA(logger, config);
   ota->begin();
+
+  mqtt = new BL::MQTT(logger, config);
+  mqtt->begin(config->getConfigValue("mqtt_hostname"), atoi(config->getConfigValue("mqtt_port")));
+
+  mqtt->registerTopic("Test/cmd", [](char *topic, char *payload, unsigned int payload_size) {
+    Log.trace("Command received: %s -> %s" CR, topic, payload);
+  });
+
+  mqtt->resubscribe();
 }
 
 void loop() {
   config->loop();
   wifi->loop();
   ota->loop();
+  mqtt->loop();
 }

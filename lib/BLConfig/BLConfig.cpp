@@ -262,6 +262,8 @@ int BL::Config::setConfigValue(int confid, const char *value)
 
     log->trace(F("ce-> %s" CR), ce);
 
+    setShouldSave();
+
     return 0;
 }
 
