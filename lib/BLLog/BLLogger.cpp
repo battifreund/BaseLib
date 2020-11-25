@@ -71,6 +71,11 @@ int BL::Logger::getLoglevel()
     return loglevel;
 }
 
+BL::Logable::Logable()
+{
+    log = &Log;
+}
+
 BL::Logable::Logable(BL::Logger *logging) 
 {
     if (logging == NULL)

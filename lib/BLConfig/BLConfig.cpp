@@ -5,7 +5,6 @@
 
 BL::Config::Config(BL::Logger *logging) : Logable(logging)
 {
-  
 }
 
 BL::Config::~Config()
@@ -14,18 +13,14 @@ BL::Config::~Config()
 
 BL::ResultCode_t BL::Config::begin(const char *filename,
                                    ConfigTemplate_t *config_templates,
-                                   int count,
-                                   size_t tokencount,
-                                   size_t valuesize)
+                                   int count)
 {
-    log->trace(F(">>> begin(count : %d, tokencount : %d, valuesize : %d)" CR), count, tokencount, valuesize);
+    log->trace(F(">>> begin(count : %d)" CR), count);
 
     setFilename(filename);
-    setValueSize(valuesize);
-    setConfigEntrySize(valuesize + 1);
-    setTemplates(config_templates);
 
-    entries = (char *)malloc(getConfigEntrySize() * count);
+    entries = new Entry[count];
+
     if (entries == NULL)
     {
         log->fatal(F("Malloc (entries) failed!" CR));
@@ -33,35 +28,20 @@ BL::ResultCode_t BL::Config::begin(const char *filename,
     }
     setEntryCount(count);
 
-    if (tokencount != 0)
+    if (token_max == 0)
     {
-        setTokenCount(tokencount);
-    }
-    else
-    {
-        setTokenCount(estimateTokenCount());
+        token_max = estimateTokenCount();
     }
 
-    tok = (jsmntok_t *)malloc(getTokenCount() * sizeof(jsmntok_t));
-    if (tok == NULL)
+    tok = new jsmntok_t[token_max];
+    if (entries == NULL)
     {
-        log->fatal(F("Malloc (tokens) failed!" CR));
+        log->fatal(F("Malloc (tok) failed!" CR));
         return BL::FAILED;
     }
 
     size_t max_keysize = 0;
     int fc = 0;
-    /*
-    for (int i = 0; i < count; i++)
-    {
-        log->trace("--------------------------" CR);
-        log->trace("key : %s" CR, config_templates[i].key);
-        log->trace("defaultvalue : %s" CR, config_templates[i].defaultvalue);
-        log->trace("input_field : %d" CR, config_templates[i].input_field);
-        log->trace("label : %s" CR, config_templates[i].label);
-        log->trace("input_len : %d" CR, config_templates[i].input_len);
-    }
-*/
     for (int i = 0; i < count; i++)
     {
         if (max_keysize < strlen(config_templates[i].key))
@@ -71,9 +51,8 @@ BL::ResultCode_t BL::Config::begin(const char *filename,
 
         log->trace("i %d : max_keysize %d" CR, i, max_keysize);
 
-        setConfigValue(i, config_templates[i].defaultvalue);
-
-        log->trace("SET %s" CR, getConfigValue(i));
+        entries[i].setTemplate(&config_templates[i]);
+        entries[i].setValue(config_templates[i].defaultvalue);
 
         if (config_templates[i].input_field == 1)
         {
@@ -82,9 +61,8 @@ BL::ResultCode_t BL::Config::begin(const char *filename,
 
         log->trace("fc %d" CR, fc);
     }
-
-    setKeySize(max_keysize);
     setFieldCount(fc);
+    setKeySize(max_keysize);
 
     /* Prepare parser */
     jsmn_init(&parser);
@@ -94,21 +72,6 @@ BL::ResultCode_t BL::Config::begin(const char *filename,
     log->trace(F("Config ready!" CR));
 
     return BL::OK;
-}
-
-void BL::Config::setTemplates(ConfigTemplate_t *templ)
-{
-    templates = templ;
-}
-
-BL::ConfigTemplate_t *BL::Config::getTemplates()
-{
-    return templates;
-}
-
-BL::ConfigTemplate_t *BL::Config::getTemplate(int confid)
-{
-    return &getTemplates()[confid];
 }
 
 const char *BL::Config::getFilename()
@@ -137,39 +100,6 @@ size_t BL::Config::estimateTokenCount()
     return entry_cnt * 5;
 }
 
-void BL::Config::setKeySize(size_t keysize)
-{
-    log->trace(F("setKeySize(%d)" CR), keysize);
-    key_size = keysize;
-}
-
-size_t BL::Config::getKeySize()
-{
-    return key_size;
-}
-
-void BL::Config::setValueSize(size_t valuesize)
-{
-    log->trace(F("setValueSize(%d)" CR), valuesize);
-    value_size = valuesize;
-}
-
-size_t BL::Config::getValueSize()
-{
-    return value_size;
-}
-
-void BL::Config::setConfigEntrySize(size_t size)
-{
-    log->trace(F("setConfigEntrySize(%d)" CR), size);
-    config_entry_size = size;
-}
-
-size_t BL::Config::getConfigEntrySize()
-{
-    return config_entry_size;
-}
-
 void BL::Config::setEntryCount(size_t count)
 {
     log->trace(F("setEntryCount(%d)" CR), count);
@@ -192,85 +122,76 @@ int BL::Config::getFieldCount()
     return field_cnt;
 }
 
-char *BL::Config::getConfigEntry(int confid)
+void BL::Config::setKeySize(int size)
 {
-    return (char *)(entries + confid * getConfigEntrySize());
+    log->trace(F("setKeySize(%d)" CR), size);
+    keysize_max = size;
 }
 
-BL::ConfigTemplate_t *BL::Config::getConfigTemplate(int confid)
+int BL::Config::getKeySize()
 {
-    return &templates[confid];
+    return keysize_max;
 }
 
-int BL::Config::matchConfigKey(const char *key)
+BL::Config::Entry *BL::Config::getEntry(int confid)
 {
-    log->trace(F(">>> matchConfigKey(%s)" CR), key);
+    if (confid < 0 || confid >= getEntryCount())
+    {
+        log->fatal(F("getEntry : Illegal Id (%d)" CR), confid);
+        return NULL;
+    }
 
+    return &entries[confid];
+}
+
+BL::Config::Entry *BL::Config::getEntry(const char *key)
+{
     int id = -1;
     for (int i = 0; i < getEntryCount(); i++)
     {
-        id = strncmp(getConfigTemplate(i)->key, key, getKeySize());
-        if (id == 0)
+        if (strcmp(getEntry(i)->getKey(), key) == 0)
         {
-            log->trace(F("<<< matchConfigKey = %d" CR), i);
-            return i;
+            return getEntry(i);
         }
     }
 
-    log->trace(F("<<< matchConfigKey = -1" CR));
-    return -1;
+    log->fatal(F("getEntry : Illegal Key (%s)" CR), key);
+    return NULL;
 }
 
-const char *BL::Config::getConfigKey(int confid)
+char *BL::Config::getValue(const char *key)
 {
-    if (confid < 0 || confid > getEntryCount())
+    Entry *ent = getEntry(key);
+    if (ent != NULL)
     {
-        log->fatal(F("getConfigKey : Illegal Id (%d)" CR), confid);
+
+        return ent->getValue();
+    }
+    else
+    {
         return NULL;
     }
-    return getConfigTemplate(confid)->key;
 }
 
-char *BL::Config::getConfigValue(int confid)
+int BL::Config::setValue(const char *key, const char *value)
 {
-    if (confid < 0 || confid > getEntryCount())
-    {
-        log->fatal(F("getConfigValue : Illegal Id (%d)" CR), confid);
-        return NULL;
-    }
-    return getConfigEntry(confid);
-}
-
-char *BL::Config::getConfigValue(const char *key)
-{
-    return getConfigValue(matchConfigKey(key));
-}
-
-int BL::Config::setConfigValue(int confid, const char *value)
-{
-    char *ce = getConfigEntry(confid);
+    Entry *ce = getEntry(key);
 
     if (ce == NULL)
     {
-        log->fatal(F("setConfigValue(%d, %s) : Failed" CR), confid, value);
+        log->fatal(F("setValue(%s, %s) : Failed" CR), key, value);
         return -1;
     }
 
-    log->trace(F("setConfigValue(%d, %s)" CR), confid, value);
+    log->trace(F("setConfigValue(%s, %s)" CR), key, value);
 
-    strncpy(ce, value, getValueSize());
-
-    log->trace(F("ce-> %s" CR), ce);
+    ce->setValue(value);
 
     setShouldSave();
 
     return 0;
 }
 
-int BL::Config::setConfigValue(const char *key, const char *value)
-{
-    return setConfigValue(matchConfigKey(key), value);
-}
 
 int BL::Config::parseConfigBuffer(const char *buffer, int size)
 {
@@ -283,7 +204,8 @@ int BL::Config::parseConfigBuffer(const char *buffer, int size)
     log->trace(F("r = %d" CR), r);
 
     char *token;
-    int key = -1;
+    Entry *ent = NULL;
+
     int assertions = -1;
 
     if (r >= 0)
@@ -291,6 +213,7 @@ int BL::Config::parseConfigBuffer(const char *buffer, int size)
         assertions = 0;
 
         token = (char *)malloc(size);
+
 
         if (token != NULL)
         {
@@ -307,10 +230,11 @@ int BL::Config::parseConfigBuffer(const char *buffer, int size)
                     switch (tok[i].size)
                     {
                     case 0:
-                        if (key >= 0)
+                        if (ent != NULL)
                         {
-                            // setConfigValue(key, token);
+                            ent->setValue(token);
                             assertions++;
+                            ent = NULL;
                         }
                         else
                         {
@@ -318,13 +242,9 @@ int BL::Config::parseConfigBuffer(const char *buffer, int size)
                         }
                         break;
                     case 1:
-                        key = matchConfigKey(token);
+                        ent = getEntry(token);
 
-                        if (key >= 0)
-                        {
-                            log->trace(F("key %d : %s" CR), key, getConfigKey(key));
-                        }
-                        else
+                        if (ent == NULL)
                         {
                             log->warning(F("Unknown config key '%s'" CR), token);
                         }
@@ -455,8 +375,8 @@ int BL::Config::save()
             {
                 file.print(",");
             }
-            log->trace(F("\"%s\":\"%s\"" CR), getConfigKey(i), getConfigValue(i));
-            file.printf("\"%s\":\"%s\"", getConfigKey(i), getConfigValue(i));
+            log->trace(F("\"%s\":\"%s\"" CR), getEntry(i)->getKey(), getEntry(i)->getValue());
+            file.printf("\"%s\":\"%s\"", getEntry(i)->getKey(), getEntry(i)->getValue());
         }
         file.print("}");
         // Close the file
@@ -500,4 +420,82 @@ void BL::Config::loop()
 BL::Configurable::Configurable(BL::Config *conf)
 {
     config = conf;
+}
+
+BL::Config::Entry::Entry()
+{
+}
+
+BL::Config::Entry::Entry(BL::Logger *logging) : Logable(logging)
+{
+}
+
+void BL::Config::Entry::setTemplate(ConfigTemplate_t *templ_)
+{
+    templ = templ_;
+}
+
+BL::ConfigTemplate_t *BL::Config::Entry::getTemplate()
+{
+    return templ;
+}
+
+const char *BL::Config::Entry::getKey()
+{
+    if(templ == NULL) {
+        log->fatal(F("getKey : No template!" CR));
+        return NULL;
+    }
+    return templ->key;
+}
+
+const char *BL::Config::Entry::getDefaultValue()
+{
+    if (templ == NULL)
+    {
+        log->fatal(F("getDefaultValue : No template!" CR));
+        return NULL;
+    }
+    return templ->defaultvalue;
+}
+
+boolean BL::Config::Entry::isInputField()
+{
+    if (templ == NULL)
+    {
+        log->fatal(F("isInputField : No template!" CR));
+        return NULL;
+    }
+    return templ->input_field == 1;
+}
+
+const char *BL::Config::Entry::getInputLabel()
+{
+    if (templ == NULL)
+    {
+        log->fatal(F("getInputLabel : No template!" CR));
+        return NULL;
+    }
+    return templ->label;
+}
+
+const int BL::Config::Entry::getInputLen()
+{
+    if (templ == NULL)
+    {
+        log->fatal(F("getInputLen : No template!" CR));
+        return NULL;
+    }
+    return templ->input_len;
+}
+
+char *BL::Config::Entry::getValue()
+{
+    return value;
+}
+
+
+void BL::Config::Entry::setValue(const char *value_)
+{
+    strncpy(value, value_, CONFIG_VALUE_SIZE);
 }

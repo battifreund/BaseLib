@@ -10,11 +10,7 @@
 #include <BLLogger.h>
 #include <BLConfig.h>
 
-#define CONFIG_JSON_TOKCNT 40
-
-#define CONFIG_KEY_SIZE 40
 #define CONFIG_VALUE_SIZE 80
-#define CONFIG_LABEL_SIZE 20
 
 #define CONFIG_FILE "config.json"
 
@@ -31,22 +27,45 @@ namespace BL
 
     class Config : Logable, Loopable
     {
+        public:
+        class Entry : Logable 
+        {
+            private:
+                ConfigTemplate_t *templ;
+                char value[CONFIG_VALUE_SIZE + 1];
+
+            public:
+                Entry();
+                Entry(BL::Logger *logging);
+
+                void setTemplate(ConfigTemplate_t *templ);
+                ConfigTemplate_t *getTemplate();
+
+                const char *getKey();
+
+                void setValue(const char *value);
+                char *getValue();
+
+                const char *getDefaultValue();
+                boolean isInputField();
+                const char *getInputLabel();
+                const int getInputLen();
+        };
+
     private:
         const char *filename = CONFIG_FILE;
 
         jsmn_parser parser;
         int token_cnt = 0;
+        int token_max = 0;
         jsmntok_t *tok = NULL;
 
-        ConfigTemplate_t *templates = NULL;
-
         int entry_cnt = 0;
-        size_t config_entry_size = 0;
-        char *entries = NULL;
-
-        size_t key_size = CONFIG_KEY_SIZE;
-        size_t value_size = CONFIG_VALUE_SIZE;
+        int entry_max = 15;
+        Entry *entries;
         int field_cnt = 0;
+
+        int keysize_max = 0;
 
         boolean should_save = false;
 
@@ -54,28 +73,16 @@ namespace BL
         Config(BL::Logger *log);
         ~Config();
 
-        const char *getFilename();
-        void setFilename(const char *name);
-
         BL::ResultCode_t begin(const char *filename,
                                ConfigTemplate_t *config_templates, 
-                               int count,
-                               size_t tokencount = 0,
-                               size_t valuesize = CONFIG_VALUE_SIZE);
+                               int count);
 
-        void setTemplates(ConfigTemplate_t *templ = NULL);
-        ConfigTemplate_t *getTemplates();
-        ConfigTemplate_t *getTemplate(int confid);
+        const char *getFilename();
+        void setFilename(const char *name);
 
         void setTokenCount(size_t count);
         size_t getTokenCount();
         size_t estimateTokenCount();
-
-        void setKeySize(size_t keysize);
-        size_t getKeySize();
-
-        void setValueSize(size_t valuesize);
-        size_t getValueSize();
 
         void setEntryCount(size_t count);
         size_t getEntryCount();
@@ -83,21 +90,14 @@ namespace BL
         void setFieldCount(int count);
         int getFieldCount();
 
-        void setConfigEntrySize(size_t size);
-        size_t getConfigEntrySize();
+        void setKeySize(int size);
+        int getKeySize();
 
-        char *getConfigEntry(int confid);
-        ConfigTemplate_t *getConfigTemplate(int confid);
-
-        int matchConfigKey(const char *key);
-
-        const char *getConfigKey(int confid);
-
-        char *getConfigValue(int confid);
-        char *getConfigValue(const char *key);
-
-        int setConfigValue(int confid, const char *value);
-        int setConfigValue(const char *key, const char *value);
+        Entry *getEntry(const char *key);
+        Entry *getEntry(int confid);
+        
+        int setValue(const char *key, const char *value);
+        char *getValue(const char *key);
 
         int parseConfigBuffer(const char *buffer, int size);
 

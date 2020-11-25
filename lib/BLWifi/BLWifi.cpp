@@ -28,15 +28,15 @@ BL::ResultCode_t BL::Wifi::begin()
     {
         for (unsigned int i = 0; i < config->getEntryCount(); i++)
         {
-            ConfigTemplate_t *ct = config->getConfigTemplate(i);
+            BL::Config::Entry  *ent = config->getEntry(i);
 
-            if (ct != NULL && ct->input_field)
+            if (ent != NULL && ent->isInputField())
             {
                 WMParams[i] = new WiFiManagerParameter(
-                    config->getConfigKey(i),
-                    ct->label,
-                    config->getConfigValue(i),
-                    ct->input_len);
+                    ent->getKey(),
+                    ent->getInputLabel(),
+                    ent->getDefaultValue(),
+                    ent->getInputLen());
 
                 wifiManager->addParameter(WMParams[i]);
             }
@@ -49,7 +49,7 @@ BL::ResultCode_t BL::Wifi::begin()
     {
         for (int i = 0; i < config->getFieldCount(); i++)
         {
-            if (config->setConfigValue(WMParams[i]->getID(), WMParams[i]->getValue()) >= 0)
+            if (config->setValue(WMParams[i]->getID(), WMParams[i]->getValue()) >= 0)
             {
                 log->trace(F("%s -> %s" CR), WMParams[i]->getID(), WMParams[i]->getValue());
             }

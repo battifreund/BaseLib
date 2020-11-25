@@ -36,7 +36,10 @@ namespace BL
             Logger *logger = NULL;
 
         public:
+            Logable();
             Logable(BL::Logger *log);
+            
+            void setLogger(BL::Logger *logger_);
     };
 
 }; // namespace BL
