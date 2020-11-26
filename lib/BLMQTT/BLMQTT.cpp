@@ -79,6 +79,13 @@ void BL::MQTT::dispatch(char *topic, char *payload, unsigned int payload_size)
     payloadbuffer[payload_size] = 0;
 
     log->trace("Command received: %s -> %s" CR, topic, payloadbuffer);
+
+    for (int i = 0; i < topics_cnt; i++)
+    {
+        if(strcmp(topic, topics[i]->getID()) == 0) {
+            topics[i]->getHandler()(topic, payloadbuffer, payload_size);
+        }
+    }
 }
 
 BL::ResultCode_t

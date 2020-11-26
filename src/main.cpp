@@ -51,7 +51,7 @@ void setup()
   mqtt->begin(config->getValue("mqtt_hostname"), atoi(config->getValue("mqtt_port")));
 
   mqtt->registerTopic("Test/cmd", [](char *topic, char *payload, unsigned int payload_size) {
-    Log.trace("Command received: %s -> %s" CR, topic, payload);
+    Log.trace("TOPIC %s -> %s" CR, topic, payload);
   });
 
   mqtt->resubscribe();
