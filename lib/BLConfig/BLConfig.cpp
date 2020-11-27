@@ -1,5 +1,15 @@
 #include <Arduino.h>
+
+#include <FS.h>
+
+#if defined(ESP8266)
+#define FILESYSTEM LittleFS
 #include <LittleFS.h>
+#else
+#define FILESYSTEM SPIFFS
+#include <SPIFFS.h>
+#endif
+
 
 #include <BLConfig.h>
 
@@ -146,7 +156,6 @@ BL::Config::Entry *BL::Config::getEntry(int confid)
 
 BL::Config::Entry *BL::Config::getEntry(const char *key)
 {
-    int id = -1;
     for (int i = 0; i < getEntryCount(); i++)
     {
         if (strcmp(getEntry(i)->getKey(), key) == 0)
@@ -280,12 +289,12 @@ int BL::Config::load()
 
     log->trace(F(">>> load(%s)" CR), getFilename());
 
-    if (LittleFS.begin())
+    if (FILESYSTEM.begin())
     {
-        if (LittleFS.exists(CONFIG_FILE))
+        if (FILESYSTEM.exists(CONFIG_FILE))
         {
             // Open file for reading
-            File file = LittleFS.open(CONFIG_FILE, "r");
+            File file = FILESYSTEM.open(CONFIG_FILE, "r");
 
             size_t size = file.size();
 
@@ -331,7 +340,7 @@ int BL::Config::load()
             log->fatal(F("No config file!"));
         }
 
-        LittleFS.end();
+        FILESYSTEM.end();
     }
     else
     {
@@ -355,14 +364,14 @@ int BL::Config::save()
 {
     log->trace(F(">>> save(%s)" CR), getFilename());
 
-    if (LittleFS.begin())
+    if (FILESYSTEM.begin())
     {
 
         // Delete existing file, otherwise the configuration is appended to the file
-        LittleFS.remove(getFilename());
+        FILESYSTEM.remove(getFilename());
 
         // Open file for writing
-        File file = LittleFS.open(getFilename(), "w");
+        File file = FILESYSTEM.open(getFilename(), "w");
         if (!file)
         {
             log->error(F("Failed to create file" CR));
@@ -484,7 +493,7 @@ const int BL::Config::Entry::getInputLen()
     if (templ == NULL)
     {
         log->fatal(F("getInputLen : No template!" CR));
-        return NULL;
+        return -1;
     }
     return templ->input_len;
 }

@@ -2,31 +2,31 @@
 
 #include <BLMQTT.h>
 
-
-
 BL::MQTT::MQTT(BL::Logger *logging, BL::Config *config) : Logable(logging), Configurable(config)
 {
 }
 
-BL::ResultCode_t BL::MQTT::begin(char *host, uint16_t port, int max_topics)
+BL::ResultCode_t BL::MQTT::begin(char *host, uint16_t port, char *name, char *passwd, int max_topics)
 {
     log->trace(F(">>>setupMQTT(%s, %d)" CR), host, port);
 
     while (WiFi.status() != WL_CONNECTED)
     {
         delay(500);
-        log->notice(".");
+        log->notice("." CR);
     }
 
     log->trace(F("IP: %s" CR), WiFi.localIP().toString().c_str());
 
     mqttClient = new PubSubClient(espClient);
 
-    if(mqttClient == NULL)
+    if (mqttClient == NULL)
     {
         log->fatal(F("Failed to initialize PubSubClient" CR));
         return BL::FAILED;
     }
+
+    setMQTTName(name);
 
     mqttClient->setServer(host, port);
     reconnect();
@@ -82,25 +82,36 @@ void BL::MQTT::dispatch(char *topic, char *payload, unsigned int payload_size)
 
     for (int i = 0; i < topics_cnt; i++)
     {
-        if(strcmp(topic, topics[i]->getID()) == 0) {
+        if (strcmp(topic, topics[i]->getID()) == 0)
+        {
             topics[i]->getHandler()(topic, payloadbuffer, payload_size);
         }
     }
 }
 
-BL::ResultCode_t
-BL::MQTT::registerTopic(char *id, TopicHandlerFunction_t handler)
+void BL::MQTT::setMQTTName(char *name)
 {
-    if(topics == NULL) {
+    mqttName = name;
+}
+
+char *BL::MQTT::getMQTTName()
+{
+    return mqttName;
+}
+
+BL::ResultCode_t BL::MQTT::registerTopic(char *id, TopicHandlerFunction_t handler)
+{
+    if (topics == NULL)
+    {
         log->fatal(F("Uninitilized topic store" CR));
         return BL::FAILED;
     }
 
-    if(topics_cnt + 1 > topics_max)
+    if (topics_cnt + 1 > topics_max)
     {
         topics_max += 5;
-        topics = (BL::MQTT::Topic **) realloc(topics, sizeof(BL::MQTT::Topic *) * topics_max);
-        if(topics == NULL)
+        topics = (BL::MQTT::Topic **)realloc(topics, sizeof(BL::MQTT::Topic *) * topics_max);
+        if (topics == NULL)
         {
             log->fatal(F("Out of memory: Failed to extend topic store" CR));
             return BL::FAILED;
@@ -118,7 +129,8 @@ BL::MQTT::registerTopic(char *id, TopicHandlerFunction_t handler)
 
 void BL::MQTT::resubscribe()
 {
-    for (int i = 0; i < topics_cnt; i++) {
+    for (int i = 0; i < topics_cnt; i++)
+    {
         log->trace(F("Subscribe(%s)" CR), topics[i]->getID());
         mqttClient->subscribe(topics[i]->getID());
     }
@@ -145,7 +157,8 @@ void BL::MQTT::reconnect()
     {
         log->notice(F("Attempting MQTT connection..." CR));
         // Attempt to connect
-        if (mqttClient->connect(WiFi.hostname().c_str()))
+
+        if (mqttClient->connect(getMQTTName()))
         {
             log->notice(F("connected" CR));
 
@@ -168,7 +181,6 @@ void BL::MQTT::loop()
 
 BL::MQTT::Topic::Topic(BL::Logger *logging) : Logable(logging)
 {
-
 }
 
 void BL::MQTT::Topic::setID(char *identifier)

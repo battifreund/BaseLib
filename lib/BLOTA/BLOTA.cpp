@@ -49,6 +49,8 @@ BL::ResultCode_t BL::OTA::begin()
     });
 
     ota->begin();
+
+    return BL::OK;
 }
 
 void BL::OTA::loop()

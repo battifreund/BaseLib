@@ -3,7 +3,11 @@
 
 #include <functional>
 
+#if defined(ESP8266)
 #include <ESP8266WiFi.h>
+#else
+#include <WiFi.h>
+#endif
 
 // MQTT Client
 // MQTT_KEEPALIVE : keepAlive interval in Seconds
@@ -58,16 +62,22 @@ namespace BL
         size_t payloadbuffer_size = 0;
         char *payloadbuffer = NULL;
 
+        char *mqttName = NULL;
+        char *mqttPassword = NULL;
+
     public:
         MQTT(BL::Logger *logging, BL::Config *config);
 
-        BL::ResultCode_t begin(char *host, uint16_t port, int max_topics = 5);
+        BL::ResultCode_t begin(char *host, uint16_t port, char *mqttName, char *mqttPassword = NULL, int max_topics = 5);
         void reconnect();
         BL::ResultCode_t registerTopic(char *id, TopicHandlerFunction_t handler);
         void resubscribe();
         void unsubscribe();
 
         void dispatch(char *topic, char *payload, unsigned int payload_size);
+
+        void setMQTTName(char *name);
+        char *getMQTTName();
 
         void loop();
     };

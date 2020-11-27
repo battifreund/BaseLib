@@ -48,7 +48,7 @@ void setup()
   ota->begin();
 
   mqtt = new BL::MQTT(logger, config);
-  mqtt->begin(config->getValue("mqtt_hostname"), atoi(config->getValue("mqtt_port")));
+  mqtt->begin(config->getValue("mqtt_hostname"), atoi(config->getValue("mqtt_port")), "hugo");
 
   mqtt->registerTopic("Test/cmd", [](char *topic, char *payload, unsigned int payload_size) {
     Log.trace("TOPIC %s -> %s" CR, topic, payload);

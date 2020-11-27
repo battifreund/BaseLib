@@ -8,7 +8,6 @@
 #include <BLBase.h>
 #include <BLLoop.h>
 #include <BLLogger.h>
-#include <BLConfig.h>
 
 #define CONFIG_VALUE_SIZE 80
 
