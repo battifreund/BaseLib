@@ -11,7 +11,7 @@
 
 #define CONFIG_VALUE_SIZE 80
 
-#define CONFIG_FILE "config.json"
+#define CONFIG_FILE "/config.json"
 
 namespace BL
 {
@@ -55,16 +55,16 @@ namespace BL
         const char *filename = CONFIG_FILE;
 
         jsmn_parser parser;
-        int token_cnt = 0;
-        int token_max = 0;
+        size_t token_cnt = 0;
+        size_t token_max = 0;
         jsmntok_t *tok = NULL;
 
-        int entry_cnt = 0;
-        int entry_max = 15;
+        size_t entry_cnt = 0;
+        size_t entry_max = 15;
         Entry *entries;
-        int field_cnt = 0;
+        size_t field_cnt = 0;
 
-        int keysize_max = 0;
+        size_t keysize_max = 0;
 
         boolean should_save = false;
 
@@ -73,32 +73,35 @@ namespace BL
         ~Config();
 
         BL::ResultCode_t begin(const char *filename,
-                               ConfigTemplate_t *config_templates, 
-                               int count);
+                               ConfigTemplate_t *config_templates,
+                               size_t count);
 
         const char *getFilename();
         void setFilename(const char *name);
 
         void setTokenCount(size_t count);
         size_t getTokenCount();
-        size_t estimateTokenCount();
+
+        size_t estimateMaxTokenCount();
+        void setMaxTokenCount(size_t count);
+        size_t getMaxTokenCount();
 
         void setEntryCount(size_t count);
         size_t getEntryCount();
 
-        void setFieldCount(int count);
-        int getFieldCount();
+        void setFieldCount(size_t count);
+        size_t getFieldCount();
 
-        void setKeySize(int size);
-        int getKeySize();
+        void setKeySize(size_t size);
+        size_t getKeySize();
 
         Entry *getEntry(const char *key);
-        Entry *getEntry(int confid);
-        
+        Entry *getEntry(size_t confid);
+
         int setValue(const char *key, const char *value);
         char *getValue(const char *key);
 
-        int parseConfigBuffer(const char *buffer, int size);
+        int parseConfigBuffer(const char *buffer, size_t size);
 
         int load();
         int save();

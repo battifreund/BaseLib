@@ -10,7 +10,6 @@
 #include <SPIFFS.h>
 #endif
 
-
 #include <BLConfig.h>
 
 BL::Config::Config(BL::Logger *logging) : Logable(logging)
@@ -23,14 +22,13 @@ BL::Config::~Config()
 
 BL::ResultCode_t BL::Config::begin(const char *filename,
                                    ConfigTemplate_t *config_templates,
-                                   int count)
+                                   size_t count)
 {
     log->trace(F(">>> begin(count : %d)" CR), count);
 
     setFilename(filename);
 
-    entries = new Entry[count];
-
+    entries = (Entry *)malloc(count * sizeof(Entry));
     if (entries == NULL)
     {
         log->fatal(F("Malloc (entries) failed!" CR));
@@ -40,19 +38,20 @@ BL::ResultCode_t BL::Config::begin(const char *filename,
 
     if (token_max == 0)
     {
-        token_max = estimateTokenCount();
+        token_max = estimateMaxTokenCount();
     }
 
-    tok = new jsmntok_t[token_max];
-    if (entries == NULL)
+    tok = (jsmntok_t *)malloc(token_max * sizeof(jsmntok_t));
+    if (tok == NULL)
     {
         log->fatal(F("Malloc (tok) failed!" CR));
         return BL::FAILED;
     }
+    setMaxTokenCount(token_max);
 
     size_t max_keysize = 0;
-    int fc = 0;
-    for (int i = 0; i < count; i++)
+    size_t fc = 0;
+    for (size_t i = 0; i < count; i++)
     {
         if (max_keysize < strlen(config_templates[i].key))
         {
@@ -105,9 +104,20 @@ size_t BL::Config::getTokenCount()
     return token_cnt;
 }
 
-size_t BL::Config::estimateTokenCount()
+size_t BL::Config::estimateMaxTokenCount()
 {
     return entry_cnt * 5;
+}
+
+void BL::Config::setMaxTokenCount(size_t count)
+{
+    log->trace(F("setMaxTokenCount(%d)" CR), count);
+    token_max = count;
+}
+
+size_t BL::Config::getMaxTokenCount()
+{
+    return token_max;
 }
 
 void BL::Config::setEntryCount(size_t count)
@@ -121,31 +131,31 @@ size_t BL::Config::getEntryCount()
     return entry_cnt;
 }
 
-void BL::Config::setFieldCount(int count)
+void BL::Config::setFieldCount(size_t count)
 {
     log->trace(F("setFieldCount(%d)" CR), count);
     field_cnt = count;
 }
 
-int BL::Config::getFieldCount()
+size_t BL::Config::getFieldCount()
 {
     return field_cnt;
 }
 
-void BL::Config::setKeySize(int size)
+void BL::Config::setKeySize(size_t size)
 {
     log->trace(F("setKeySize(%d)" CR), size);
     keysize_max = size;
 }
 
-int BL::Config::getKeySize()
+size_t BL::Config::getKeySize()
 {
     return keysize_max;
 }
 
-BL::Config::Entry *BL::Config::getEntry(int confid)
+BL::Config::Entry *BL::Config::getEntry(size_t confid)
 {
-    if (confid < 0 || confid >= getEntryCount())
+    if (confid >= getEntryCount())
     {
         log->fatal(F("getEntry : Illegal Id (%d)" CR), confid);
         return NULL;
@@ -156,7 +166,7 @@ BL::Config::Entry *BL::Config::getEntry(int confid)
 
 BL::Config::Entry *BL::Config::getEntry(const char *key)
 {
-    for (int i = 0; i < getEntryCount(); i++)
+    for (size_t i = 0; i < getEntryCount(); i++)
     {
         if (strcmp(getEntry(i)->getKey(), key) == 0)
         {
@@ -201,14 +211,13 @@ int BL::Config::setValue(const char *key, const char *value)
     return 0;
 }
 
-
-int BL::Config::parseConfigBuffer(const char *buffer, int size)
+int BL::Config::parseConfigBuffer(const char *buffer, size_t size)
 {
     log->trace(F(">>> parseConfigBuffer(%d, %s)" CR), size, buffer);
 
     jsmn_init(&parser);
 
-    int r = jsmn_parse(&parser, buffer, size, tok, getTokenCount());
+    int r = jsmn_parse(&parser, buffer, size, tok, getMaxTokenCount());
 
     log->trace(F("r = %d" CR), r);
 
@@ -221,8 +230,7 @@ int BL::Config::parseConfigBuffer(const char *buffer, int size)
     {
         assertions = 0;
 
-        token = (char *)malloc(size);
-
+        token = (char *)malloc(size + 1);
 
         if (token != NULL)
         {
@@ -289,7 +297,11 @@ int BL::Config::load()
 
     log->trace(F(">>> load(%s)" CR), getFilename());
 
+#if defined(ESP32)
+    if (FILESYSTEM.begin(true))
+#else
     if (FILESYSTEM.begin())
+#endif
     {
         if (FILESYSTEM.exists(CONFIG_FILE))
         {
@@ -300,12 +312,13 @@ int BL::Config::load()
 
             if (size > 0)
             {
-                config_buffer = (char *)malloc(size);
+                config_buffer = (char *)malloc(size + 1);
 
                 if (config_buffer != NULL)
                 {
                     if (file.readBytes(config_buffer, size) > 0)
                     {
+                        config_buffer[size] = '\0';
                         log->trace(F("File read! size : %d" CR), size);
                         if (parseConfigBuffer(config_buffer, size) < 0)
                         {
@@ -364,7 +377,11 @@ int BL::Config::save()
 {
     log->trace(F(">>> save(%s)" CR), getFilename());
 
+#if defined(ESP32)
+    if (FILESYSTEM.begin(true))
+#else
     if (FILESYSTEM.begin())
+#endif
     {
 
         // Delete existing file, otherwise the configuration is appended to the file
@@ -378,7 +395,7 @@ int BL::Config::save()
             return -1;
         }
         file.print("{");
-        for (int i = 0; i < getEntryCount(); i++)
+        for (size_t i = 0; i < getEntryCount(); i++)
         {
             if (i > 0)
             {
@@ -451,7 +468,8 @@ BL::ConfigTemplate_t *BL::Config::Entry::getTemplate()
 
 const char *BL::Config::Entry::getKey()
 {
-    if(templ == NULL) {
+    if (templ == NULL)
+    {
         log->fatal(F("getKey : No template!" CR));
         return NULL;
     }
@@ -502,7 +520,6 @@ char *BL::Config::Entry::getValue()
 {
     return value;
 }
-
 
 void BL::Config::Entry::setValue(const char *value_)
 {

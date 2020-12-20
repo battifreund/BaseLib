@@ -65,11 +65,29 @@ namespace BL
         char *mqttName = NULL;
         char *mqttPassword = NULL;
 
+        unsigned long lastConnect;
+        unsigned long lastTry;
+        unsigned long reconInterval = 5000;
+
+#if defined(ESP32)
+        //
+        // https://github.com/espressif/arduino-esp32/issues/3722
+        //
+        int _reconnectTries = 0;
+#endif
+
     public:
         MQTT(BL::Logger *logging, BL::Config *config);
 
         BL::ResultCode_t begin(char *host, uint16_t port, char *mqttName, char *mqttPassword = NULL, int max_topics = 5);
-        void reconnect();
+        bool reconnect(unsigned long timeout = 0);
+        void setReconInterval(unsigned long interval);
+        unsigned long getReconInterval();
+        void setLastConnect(unsigned long last);
+        unsigned long getLastConnect();
+        void setLastTry(unsigned long last);
+        unsigned long getLastTry();
+
         BL::ResultCode_t registerTopic(char *id, TopicHandlerFunction_t handler);
         void resubscribe();
         void unsubscribe();

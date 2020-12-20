@@ -19,10 +19,25 @@ namespace BL
     {
     private:
         WiFiManager *wifiManager = NULL;
+        WiFiManagerParameter **WMParams = NULL;
+
+        unsigned long lastConnect;
+        unsigned long lastTry;
+        unsigned long reconInterval = 5000;
 
     public:
         Wifi(BL::Logger *logging, BL::Config *config);
-        BL::ResultCode_t begin();
+        BL::ResultCode_t begin(unsigned long reconInterval = 5000);
+
+        void setReconInterval(unsigned long interval);
+        unsigned long getReconInterval();
+        void setLastConnect(unsigned long last);
+        unsigned long getLastConnect();
+        void setLastTry(unsigned long last);
+        unsigned long getLastTry();
+
+        void transferParams();
+        const __FlashStringHelper* mapWifiStatus(wl_status_t status);
 
         void loop();
     };

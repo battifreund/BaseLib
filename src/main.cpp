@@ -17,11 +17,7 @@ BL::MQTT *mqtt;
 BL::ConfigTemplate_t configTemplates[] PROGMEM = {
     {"mqtt_hostname", "mqtt.diefreunds.de", 1, "MQTT Host", 40},
     {"mqtt_port", "1883", 1, "MQTT Port", 6},
-#ifdef TESTMODE
     {"channel", "Test", 1, "Channel", 40},
-#else
-    {"channel", "Heizung", 1, "Channel", 40},
-#endif
     {"temp_sampling", "60000", 0, "Temperature Sampling", 6},
     {"gas_sampling", "1000", 0, "Gas Sampling", 6},
     {"status_interval", "30000", 0, "Status Interval", 6},

@@ -144,39 +144,117 @@ void BL::MQTT::unsubscribe()
     }
 }
 
-void BL::MQTT::reconnect()
+bool BL::MQTT::reconnect(unsigned long timeout)
 {
-    log->trace(F(">>> reconnect()" CR));
+    log->trace(F(">>> reconnect(%d)" CR), timeout);
 
     if (mqttClient == NULL)
     {
         log->fatal(F("reconnect failed: mqttClient NULL" CR));
+        return false;
     }
-    // Loop until we're reconnected
-    while (!mqttClient->connected())
+
+    if (!mqttClient->connected())
     {
+        mqttClient->disconnect();
+
         log->notice(F("Attempting MQTT connection..." CR));
         // Attempt to connect
+        setLastTry(millis());
 
         if (mqttClient->connect(getMQTTName()))
         {
-            log->notice(F("connected" CR));
-
-            // ... and resubscribe
+            log->notice(F(" connected" CR));
+            setLastConnect(millis());
+#if defined(ESP32)
+            _reconnectTries = 0;
+#endif
+            return true;
         }
         else
         {
-            log->error(F("Connection failed (rc=%d)" CR), mqttClient->state());
-            // Wait 5 seconds before retrying
-            delay(5000);
+            log->error(F(CR "Connection failed (rc=%d)" CR), mqttClient->state());
+#if defined(ESP32)
+            //
+            // https://github.com/espressif/arduino-esp32/issues/3722
+            //
+            _reconnectTries++;
+            log->error(F("RETRY : %d" CR), _reconnectTries);
+            if (_reconnectTries > 10)
+            {
+                ESP.restart();
+            }
+#endif
+            return false;
         }
     }
+
+    return true;
+}
+
+void BL::MQTT::setReconInterval(unsigned long interval)
+{
+    reconInterval = interval;
+}
+
+unsigned long BL::MQTT::getReconInterval()
+{
+    return reconInterval;
+}
+
+void BL::MQTT::setLastConnect(unsigned long last)
+{
+    lastConnect = last;
+}
+
+unsigned long BL::MQTT::getLastConnect()
+{
+    return lastConnect;
+}
+
+void BL::MQTT::setLastTry(unsigned long last)
+{
+    lastTry = last;
+}
+
+unsigned long BL::MQTT::getLastTry()
+{
+    return lastTry;
 }
 
 void BL::MQTT::loop()
 {
-    if (mqttClient->connected())
-        mqttClient->loop();
+    if (mqttClient != NULL)
+    {
+
+        if (mqttClient->connected())
+        {
+            mqttClient->loop();
+        }
+        else
+        {
+            if (millis() > getLastTry() + getReconInterval())
+            {
+                if (WiFi.isConnected())
+                {
+                    if (reconnect())
+                    {
+                        log->notice(F("Connected ... Resubscribing:" CR));
+                        resubscribe();
+                    }
+                    else
+                    {
+                        log->error(F("Reconnect failed" CR));
+                    }
+                }
+                else
+                {
+                    log->error(F("Wifi not connected! (%d)" CR), WiFi.status());
+                }
+                setLastTry(millis());
+            }
+        }
+    }
 }
 
 BL::MQTT::Topic::Topic(BL::Logger *logging) : Logable(logging)
