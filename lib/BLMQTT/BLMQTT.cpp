@@ -6,7 +6,7 @@ BL::MQTT::MQTT(BL::Logger *logging, BL::Config *config) : Logable(logging), Conf
 {
 }
 
-BL::ResultCode_t BL::MQTT::begin(char *host, uint16_t port, char *name, char *passwd, int max_topics)
+BL::ResultCode_t BL::MQTT::begin(const char *host, uint16_t port, const char *name, const char *passwd, int max_topics)
 {
     log->trace(F(">>>setupMQTT(%s, %d)" CR), host, port);
 
@@ -89,17 +89,17 @@ void BL::MQTT::dispatch(char *topic, char *payload, unsigned int payload_size)
     }
 }
 
-void BL::MQTT::setMQTTName(char *name)
+void BL::MQTT::setMQTTName(const char *name)
 {
     mqttName = name;
 }
 
-char *BL::MQTT::getMQTTName()
+const char *BL::MQTT::getMQTTName()
 {
     return mqttName;
 }
 
-BL::ResultCode_t BL::MQTT::registerTopic(char *id, TopicHandlerFunction_t handler)
+BL::ResultCode_t BL::MQTT::registerTopic(const char *id, TopicHandlerFunction_t handler)
 {
     if (topics == NULL)
     {
@@ -261,7 +261,7 @@ BL::MQTT::Topic::Topic(BL::Logger *logging) : Logable(logging)
 {
 }
 
-void BL::MQTT::Topic::setID(char *identifier)
+void BL::MQTT::Topic::setID(const char *identifier)
 {
     id = identifier;
 }
@@ -271,7 +271,7 @@ void BL::MQTT::Topic::setHandler(TopicHandlerFunction_t _handler)
     handler = _handler;
 }
 
-char *BL::MQTT::Topic::getID()
+const char *BL::MQTT::Topic::getID()
 {
     return id;
 }

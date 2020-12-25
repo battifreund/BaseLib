@@ -24,6 +24,7 @@ BL::ConfigTemplate_t configTemplates[] PROGMEM = {
     {"debug", "0", 0, "Debug", 2}
     };
 
+
 void setup()
 {
   logger = new BL::Logger();
@@ -31,9 +32,9 @@ void setup()
 
   config = new BL::Config(logger);
   
-  if (config->begin(CONFIG_FILE, configTemplates, sizeof(configTemplates) / sizeof(BL::ConfigTemplate_t)) == BL::FAILED)
+  if (config->begin(CONFIG_FILE, configTemplates, CONFIG_TEMPLATES_CNT(configTemplates)) == BL::FAILED)
   {
-    logger->getLogging()->fatal(F("Can't initialize Config! Halt!" CR));
+    logger->getLogging()->fatal(F("Can't initialize config! Halt!" CR));
     while(1==1);
   }
 
@@ -46,7 +47,7 @@ void setup()
   mqtt = new BL::MQTT(logger, config);
   mqtt->begin(config->getValue("mqtt_hostname"), atoi(config->getValue("mqtt_port")), "hugo");
 
-  mqtt->registerTopic("Test/cmd", [](char *topic, char *payload, unsigned int payload_size) {
+  mqtt->registerTopic("Test/cmd", MQTT_CMD_SIG {
     Log.trace("TOPIC %s -> %s" CR, topic, payload);
   });
 

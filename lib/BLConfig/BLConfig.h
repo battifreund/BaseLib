@@ -12,6 +12,7 @@
 #define CONFIG_VALUE_SIZE 80
 
 #define CONFIG_FILE "/config.json"
+#define CONFIG_TEMPLATES_CNT(templ) (sizeof(templ) / sizeof(BL::ConfigTemplate_t))
 
 namespace BL
 {
@@ -26,29 +27,29 @@ namespace BL
 
     class Config : Logable, Loopable
     {
-        public:
-        class Entry : Logable 
+    public:
+        class Entry : Logable
         {
-            private:
-                ConfigTemplate_t *templ;
-                char value[CONFIG_VALUE_SIZE + 1];
+        private:
+            ConfigTemplate_t *templ;
+            char value[CONFIG_VALUE_SIZE + 1];
 
-            public:
-                Entry();
-                Entry(BL::Logger *logging);
+        public:
+            Entry();
+            Entry(BL::Logger *logging);
 
-                void setTemplate(ConfigTemplate_t *templ);
-                ConfigTemplate_t *getTemplate();
+            void setTemplate(ConfigTemplate_t *templ);
+            ConfigTemplate_t *getTemplate();
 
-                const char *getKey();
+            const char *getKey();
 
-                void setValue(const char *value);
-                char *getValue();
+            void setValue(const char *value);
+            char *getValue();
 
-                const char *getDefaultValue();
-                boolean isInputField();
-                const char *getInputLabel();
-                const int getInputLen();
+            const char *getDefaultValue();
+            boolean isInputField();
+            const char *getInputLabel();
+            const int getInputLen();
         };
 
     private:
@@ -75,6 +76,8 @@ namespace BL
         BL::ResultCode_t begin(const char *filename,
                                ConfigTemplate_t *config_templates,
                                size_t count);
+
+        void createEntries(ConfigTemplate_t *config_templates, size_t count);
 
         const char *getFilename();
         void setFilename(const char *name);
@@ -113,13 +116,13 @@ namespace BL
         void loop();
     };
 
-    class Configurable 
+    class Configurable
     {
-        public:
-            BL::Config *config;
+    public:
+        BL::Config *config;
 
-        public:
-            Configurable(BL::Config *conf);
+    public:
+        Configurable(BL::Config *conf);
     };
 
 }; // namespace BL

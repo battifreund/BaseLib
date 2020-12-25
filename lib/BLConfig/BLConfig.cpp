@@ -34,6 +34,7 @@ BL::ResultCode_t BL::Config::begin(const char *filename,
         log->fatal(F("Malloc (entries) failed!" CR));
         return BL::FAILED;
     }
+    memset(entries, 0, count * sizeof(Entry));
     setEntryCount(count);
 
     if (token_max == 0)
@@ -49,6 +50,20 @@ BL::ResultCode_t BL::Config::begin(const char *filename,
     }
     setMaxTokenCount(token_max);
 
+    createEntries(config_templates, count);
+
+    /* Prepare parser */
+    jsmn_init(&parser);
+
+    load();
+
+    log->trace(F("Config ready!" CR));
+
+    return BL::OK;
+}
+
+void BL::Config::createEntries(ConfigTemplate_t *config_templates, size_t count)
+{
     size_t max_keysize = 0;
     size_t fc = 0;
     for (size_t i = 0; i < count; i++)
@@ -72,15 +87,6 @@ BL::ResultCode_t BL::Config::begin(const char *filename,
     }
     setFieldCount(fc);
     setKeySize(max_keysize);
-
-    /* Prepare parser */
-    jsmn_init(&parser);
-
-    load();
-
-    log->trace(F("Config ready!" CR));
-
-    return BL::OK;
 }
 
 const char *BL::Config::getFilename()
@@ -450,10 +456,14 @@ BL::Configurable::Configurable(BL::Config *conf)
 
 BL::Config::Entry::Entry()
 {
+    templ = NULL;
+    value[0] = '\0';
 }
 
 BL::Config::Entry::Entry(BL::Logger *logging) : Logable(logging)
 {
+    templ = NULL;
+    value[0] = '\0';
 }
 
 void BL::Config::Entry::setTemplate(ConfigTemplate_t *templ_)

@@ -27,6 +27,8 @@
 #include <BLLogger.h>
 #include <BLConfig.h>
 
+#define MQTT_CMD_SIG [](char *topic, char *payload, unsigned int payload_size)
+
 namespace BL
 {
     class MQTT : Logable, Configurable, Loopable
@@ -36,16 +38,16 @@ namespace BL
         class Topic : Logable
         {
         private:
-            char *id = NULL;
+            const char *id = NULL;
             TopicHandlerFunction_t handler;
 
         public:
             Topic(BL::Logger *logging);
 
-            void setID(char *identifier);
+            void setID(const char *identifier);
             void setHandler(TopicHandlerFunction_t handler);
 
-            char *getID();
+            const char *getID();
             TopicHandlerFunction_t getHandler();
         };
 
@@ -62,8 +64,8 @@ namespace BL
         size_t payloadbuffer_size = 0;
         char *payloadbuffer = NULL;
 
-        char *mqttName = NULL;
-        char *mqttPassword = NULL;
+        const char *mqttName = NULL;
+        const char *mqttPassword = NULL;
 
         unsigned long lastConnect;
         unsigned long lastTry;
@@ -79,7 +81,7 @@ namespace BL
     public:
         MQTT(BL::Logger *logging, BL::Config *config);
 
-        BL::ResultCode_t begin(char *host, uint16_t port, char *mqttName, char *mqttPassword = NULL, int max_topics = 5);
+        BL::ResultCode_t begin(const char *host, uint16_t port, const char *mqttName, const char *mqttPassword = NULL, int max_topics = 5);
         bool reconnect(unsigned long timeout = 0);
         void setReconInterval(unsigned long interval);
         unsigned long getReconInterval();
@@ -88,14 +90,14 @@ namespace BL
         void setLastTry(unsigned long last);
         unsigned long getLastTry();
 
-        BL::ResultCode_t registerTopic(char *id, TopicHandlerFunction_t handler);
+        BL::ResultCode_t registerTopic(const char *id, TopicHandlerFunction_t handler);
         void resubscribe();
         void unsubscribe();
 
         void dispatch(char *topic, char *payload, unsigned int payload_size);
 
-        void setMQTTName(char *name);
-        char *getMQTTName();
+        void setMQTTName(const char *name);
+        const char *getMQTTName();
 
         void loop();
     };
