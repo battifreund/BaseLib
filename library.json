@@ -25,7 +25,13 @@
             "platforms" : ["espressif8266"]
         },
         {
+            "owner" : "zserge",
             "name" : "jsmn",
+            "platforms" : ["espressif8266"]            
+        },
+        {
+            "owner" : "Arduino",
+            "name" : "Wifi",
             "platforms" : ["espressif8266"]            
         },
         {
