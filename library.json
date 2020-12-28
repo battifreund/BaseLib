@@ -1,16 +1,48 @@
 {
     "name": "BaseLib",
     "keywords": "",
-    "description": "": {
+    "description": "",
+    "repository": {
         "type": "git",
         "url": "https://github.com/battifreund/BaseLib"
     },
     "version": "0.1",
-    "exclude": "tests",
-    "examples": "examples/*/*.ino",
+    "exclude": [
+        "test/(*"
+    ],
+    "examples": [
+        "examples/*/*.ino",
+        "src/*"
+    ],
     "frameworks": "arduino",
     "platforms": [
         "espressif8266",
         "espressif32"
-    ]
+    ],
+    "dependencies": [
+        {
+            "name" : "ArduinoLog",
+            "platforms" : ["espressif8266"]
+        },
+        {
+            "name" : "jsmn",
+            "platforms" : ["espressif8266"]            
+        },
+        {
+            "name" : "DNSServer",
+            "platforms" : ["espressif8266"]            
+        },
+        {
+            "name" : "WiFiManager",
+            "platforms" : ["espressif8266"]            
+        },
+        {
+            "name" : "PubSubClient",
+            "platforms" : ["espressif8266"]            
+        }
+    ],
+    "build": {
+        "srcDir" : "lib",
+        "srcFilter" : "*/*.cpp"
+    }
 }
