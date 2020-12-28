@@ -30,11 +30,6 @@
             "platforms" : ["espressif8266"]            
         },
         {
-            "owner" : "Arduino",
-            "name" : "Wifi",
-            "platforms" : ["espressif8266"]            
-        },
-        {
             "name" : "DNSServer",
             "platforms" : ["espressif8266"]            
         },
@@ -49,6 +44,7 @@
     ],
     "build": {
         "srcDir" : "lib",
+        "includeDir" : "lib",
         "srcFilter" : "*/*.cpp"
     }
 }
