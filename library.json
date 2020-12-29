@@ -8,7 +8,8 @@
     },
     "version": "0.1",
     "exclude": [
-        "test/*"
+        "test/*",
+        "src/main.cpp"
     ],
     "examples": [
         "example/*"
@@ -21,12 +22,12 @@
     "dependencies": [
         {
             "name" : "ArduinoLog",
-            "platforms" : ["espressif8266"]
+            "platforms" : ["espressif8266", "espressif32"]
         },
         {
             "owner" : "zserge",
             "name" : "jsmn",
-            "platforms" : ["espressif8266"]            
+            "platforms" : ["espressif8266", "espressif32"]            
         },
         {
             "name" : "DNSServer",
@@ -39,6 +40,22 @@
         {
             "name" : "PubSubClient",
             "platforms" : ["espressif8266"]            
+        },
+ 
+        {
+            "name" : "DNSServer",
+            "version" : "https://github.com/zhouhan0126/DNSServer---esp32",
+            "platforms" : ["espressif32"]            
+        },
+        {
+            "name" : "WiFiManager",
+            "version" : "https://github.com/zhouhan0126/WIFIMANAGER-ESP32",
+            "platforms" : ["espressif32"]            
+        },
+        {
+            "name" : "WebServer",
+            "version" : "https://github.com/zhouhan0126/WebServer-esp32",
+            "platforms" : ["espressif32"]            
         }
     ]
 }
