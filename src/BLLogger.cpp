@@ -1,5 +1,3 @@
-#include <Arduino.h>
-
 #include <BLLogger.h>
 
 BL::Logger::Logger(int baudrate, int loglevel)

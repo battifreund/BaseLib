@@ -1,6 +1,8 @@
 #ifndef _BLOTA_H_
 #define _BLOTA_H_
 
+#include <Arduino.h>
+
 #include <BLBase.h>
 #include <BLLoop.h>
 #include <BLLogger.h>

@@ -1,5 +1,3 @@
-#include <Arduino.h>
-
 #include <BLMQTT.h>
 
 BL::MQTT::MQTT(BL::Logger *logging, BL::Config *config) : Logable(logging), Configurable(config)

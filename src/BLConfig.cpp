@@ -1,15 +1,3 @@
-#include <Arduino.h>
-
-#include <FS.h>
-
-#if defined(ESP8266)
-#define FILESYSTEM LittleFS
-#include <LittleFS.h>
-#else
-#define FILESYSTEM SPIFFS
-#include <SPIFFS.h>
-#endif
-
 #include <BLConfig.h>
 
 BL::Config::Config(BL::Logger *logging) : Logable(logging)

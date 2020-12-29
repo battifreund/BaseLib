@@ -1,6 +1,8 @@
 #ifndef _BLLOGGER_H_
 #define _BLLOGGER_H_
 
+#include <Arduino.h>
+
 // Logging
 #include <ArduinoLog.h> //https://github.com/thijse/Arduino-Log
 

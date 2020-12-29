@@ -1,6 +1,8 @@
 #ifndef _BLMQTT_H_
 #define _BLMQTT_H_
 
+#include <Arduino.h>
+
 #include <functional>
 
 #if defined(ESP8266)

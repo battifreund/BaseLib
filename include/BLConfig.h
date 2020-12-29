@@ -1,6 +1,18 @@
 #ifndef _BLCONFIG_H_
 #define _BLCONFIG_H_
 
+#include <Arduino.h>
+
+#include <FS.h>
+
+#if defined(ESP8266)
+#define FILESYSTEM LittleFS
+#include <LittleFS.h>
+#else
+#define FILESYSTEM SPIFFS
+#include <SPIFFS.h>
+#endif
+
 // JSON
 #define JSMN_STATIC
 #include <jsmn.h> //https://github.com/zserge/jsmn
