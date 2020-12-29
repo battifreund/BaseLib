@@ -8,11 +8,10 @@
     },
     "version": "0.1",
     "exclude": [
-        "test/(*"
+        "test/*"
     ],
     "examples": [
-        "examples/*/*.ino",
-        "src/*"
+        "example/*"
     ],
     "frameworks": "arduino",
     "platforms": [
@@ -41,10 +40,5 @@
             "name" : "PubSubClient",
             "platforms" : ["espressif8266"]            
         }
-    ],
-    "build": {
-        "srcDir" : "lib",
-        "includeDir" : "lib",
-        "srcFilter" : "*/*.cpp"
-    }
+    ]
 }
