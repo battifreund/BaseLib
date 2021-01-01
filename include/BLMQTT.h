@@ -22,6 +22,8 @@
 #define MQTT_SOCKET_TIMEOUT 180
 #endif
 
+#define DEFAULT_MQTT_PORT 1883
+
 #include <PubSubClient.h> //https://github.com/knolleary/pubsubclient
 
 #include <BLBase.h>
@@ -83,7 +85,7 @@ namespace BL
     public:
         MQTT(BL::Logger *logging, BL::Config *config);
 
-        BL::ResultCode_t begin(const char *host, uint16_t port, const char *mqttName, const char *mqttPassword = NULL, int max_topics = 5);
+        BL::ResultCode_t begin(const char *host, uint16_t port = DEFAULT_MQTT_PORT, const char *mqttName = NULL, const char *mqttPassword = NULL, int max_topics = 5);
         bool reconnect(unsigned long timeout = 0);
         void setReconInterval(unsigned long interval);
         unsigned long getReconInterval();
