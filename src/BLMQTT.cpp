@@ -24,7 +24,19 @@ BL::ResultCode_t BL::MQTT::begin(const char *host, uint16_t port, const char *na
         return BL::FAILED;
     }
 
-    setMQTTName(name);
+    if(name != NULL) {
+        setMQTTName(name);
+    } else {
+        String ssid = "ESP" + String(ESP.getChipId());
+        char *buffer = (char *)malloc(ssid.length()+1);
+        if(buffer == NULL) {
+            buffer = "_NN_";
+        } else {
+            strncpy(buffer, ssid.c_str(), ssid.length());
+            buffer[ssid.length()] = '\0';
+        }
+        setMQTTName(buffer);
+    }
 
     mqttClient->setServer(host, port);
     reconnect();
